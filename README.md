@@ -303,7 +303,7 @@ http://ec2-your-public-dns.amazonaws.com
 ```
 Test an endpoint:
 ```
-http://your-ec2-ip/api/v1/books/1
+http://ec2-your-public-dns.amazonaws.com/api/v1/books/1
 ```
 
 ## Conclusion
