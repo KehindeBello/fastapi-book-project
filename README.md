@@ -1,8 +1,10 @@
-# FastAPI Book Management API
+# FastAPI Book Management API 
 
 ## Overview
 
 This project is a RESTful API built with FastAPI for managing a book collection. It provides comprehensive CRUD (Create, Read, Update, Delete) operations for books with proper error handling, input validation, and documentation.
+
+It includes CI/CD setup for testing and deplyment using Nginx as a reverse proxy.
 
 ## Features
 
@@ -49,7 +51,7 @@ fastapi-book-project/
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/hng12-devbotops/fastapi-book-project.git
+git clone https://github.com/hng12-kehindebello/fastapi-book-project.git
 cd fastapi-book-project
 ```
 
@@ -129,18 +131,181 @@ The API includes proper error handling for:
 - Invalid genre types
 - Malformed requests
 
-## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+## CI/CD Pipeline Setup
 
-## License
+### GitHub Actions Configuration
+The CI/CD pipeline is configured to:
+- Run tests on pull requests to `main`
+- Deploy the app on merging into `main`
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### CI Pipeline (Testing)
 
-## Support
 
-For support, please open an issue in the GitHub repository.
+Create a `.github/workflows` folder and add the following as `test.yml` file
+
+Trigger: Runs on pull requests to `main`
+
+```yaml
+name: test
+
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.'
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      - name: Run tests
+        run: pytest
+```
+
+### CD Pipeline (Deployment) to AWS EC2
+
+### 1. Set Up an EC2 Instance
+- Launch an Ubuntu 22.04 EC2 instance
+- Allow inbound rules for HTTP (80), HTTPS (443), and SSH (22)
+
+### 2. Connect to the EC2 Instance
+- In the EC2 Dashboard on the AWS Portal, select Instances from the left panel.
+- Find the instance you want to connect to and select it.
+- Click the Connect button at the top.
+- Choose the EC2 Instance Connect tab.
+- Click Connect – a terminal will open in your browser. You are now connected to your EC2 instance.
+
+### 3. Install Required Software
+```sh
+sudo apt update && sudo apt install -y python3-pip nginx
+```
+
+### 4. Clone the Repository on EC2
+```sh
+git clone https://github.com/your-username/fastapi-book-project.git
+cd fastapi-book-project
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 5. Set Up Nginx Reverse Proxy
+Create an Nginx configuration file:
+```sh
+sudo nano /etc/nginx/sites-available/fastapi
+```
+
+Add the following content:
+```nginx
+server {
+    listen 80;
+    server_name your-ec2-ip ec2-your-public-dns.amazonaws.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+Save and link the config:
+```sh
+sudo ln -s /etc/nginx/sites-available/fastapi /etc/nginx/sites-enabled/
+sudo systemctl restart nginx
+```
+
+### 6. Start FastAPI as a Systemd Service
+```sh
+sudo nano /etc/systemd/system/fastapi.service
+```
+
+Add:
+```ini
+[Unit]
+Description=FastAPI app
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/fastapi-book-project
+ExecStart=/home/ubuntu/fastapi-book-project/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start the service:
+```sh
+sudo systemctl daemon-reload
+sudo systemctl enable fastapi
+sudo systemctl start fastapi
+```
+
+### 7. Set up GitHub Secrets
+In your GitHub repository, configure the following secrets:
+- `EC2_HOST`: Public IP or domain of your EC2 instance
+- `EC2_SSH_KEY`: Private SSH key for accessing the EC2 instance
+
+### 8. Deploy.yml file
+
+In your `.github/workflows` folder add the following as `deploy.yml` file
+
+Trigger: Runs on merging to `main`
+
+```yaml
+name: deploy
+
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/fastapi-book-project
+            git pull origin main
+            source venv/bin/activate
+            pip install -r requirements.txt
+            sudo systemctl restart nginx
+            sudo systemctl restart fastapi.service
+```
+
+
+
+## Access the Application
+
+Once you've merged all your code changes to the main branch, your application should successfully deploy after a short while and you can access it as follows;
+
+Base URL:
+```
+http://your-ec2-ip
+http://ec2-your-public-dns.amazonaws.com
+```
+Test an endpoint:
+```
+http://your-ec2-ip/api/v1/books/1
+```
+
+## Conclusion
+You have successfully set up and deployed a FastAPI application with CI/CD on AWS EC2 and configured Nginx as a reverse proxy. 🚀
+
