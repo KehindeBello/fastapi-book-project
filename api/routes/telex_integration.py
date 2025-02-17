@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
+from core.config import settings
 
 integration_data = {
     "data": {
@@ -8,13 +9,14 @@ integration_data = {
             "app_name": "fastapiCiCD",
             "app_description": "A ci-cd slack notifier",
             "app_logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTj1aRtcV9UdFO3mfUOMjjXGxGLbZH3w1byPQ&s",
-            "app_url": "http://ec2-34-228-162-152.compute-1.amazonaws.com", 
+            "app_url": settings.APP_URL,
             "background_color": "#fff",
         },
         "is_active": True,
         "integration_type": "modifier",
         "key_features": ["Real time updates for slack"],
         "author": "KehindeBello",
+        "integration_category": "Monitoring & Logging",
         "settings": [
             {
                 "label": "channel-name",
@@ -49,8 +51,8 @@ integration_data = {
                 "default": "True",
             },
         ],
-        "target_url": "https://hooks.slack.com/services/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",
-        "tick_url": "http://ec2-34-228-162-152.compute-1.amazonaws.com/api/v1/test/telex-webhook",
+        "target_url": settings.SLACK_WEBHOOK_URL,
+        "tick_url": settings.TICK_URL,
     }
 }
 
