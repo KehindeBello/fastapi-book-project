@@ -24,3 +24,27 @@ jobs:
 
       - name: Run Tests
         run: pytest
+      
+      - name: Notify telex of test success
+        if: success()
+        run: |
+          curl -X POST \
+          -H "Content-Type: application/json" \
+          -d '{
+          "event_name": "CI Pipeline", 
+          "message": "Test passed successfully✅",
+          "status": "success",
+          "username": "GitHub Actions"
+          }' ${{secrets.TELEX_WEBHOOK_URL}}
+      
+      - name: Notify telex of test failure
+        if: failure()
+        run: |
+          curl -X POST \
+          -H "Content-Type: application/json" \
+          -d '{
+          "event_name": "CI Pipeline", 
+          "message": "Test failed❌", 
+          "status": "failure", 
+          "username": "GitHub Actions"
+          }' ${{secrets.TELEX_WEBHOOK_URL}}
