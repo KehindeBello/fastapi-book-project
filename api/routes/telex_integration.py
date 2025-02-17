@@ -8,7 +8,7 @@ integration_data = {
             "app_name": "fastapiCiCD",
             "app_description": "A ci-cd slack notifier",
             "app_logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTj1aRtcV9UdFO3mfUOMjjXGxGLbZH3w1byPQ&s",
-            "app_url": "http://ec2-35-171-27-161.compute-1.amazonaws.com",
+            "app_url": "http://ec2-34-228-162-152.compute-1.amazonaws.com", 
             "background_color": "#fff",
         },
         "is_active": True,
@@ -50,7 +50,7 @@ integration_data = {
             },
         ],
         "target_url": "https://hooks.slack.com/services/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",
-        "tick_url": "http://ec2-35-171-27-161.compute-1.amazonaws.com/telex-webhook",
+        "tick_url": "http://ec2-34-228-162-152.compute-1.amazonaws.com/api/v1/test/telex-webhook",
     }
 }
 
